@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3×3 Triplet Memory Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&display=swap" rel="stylesheet">
+<style>
+body {
+    text-shadow: 2px 2px 10px rgb(0, 0, 0);
+    font-family: "Caveat", cursive;
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 29px;
+    overflow: hidden;
+
+    /* Background image */
+    background-image: url("https://i.postimg.cc/3x6vcMjQ/bg.jpg");
+    background-size: cover;       /* Fill the whole page */
+    background-position: center;  /* Keep it centered */
+    background-repeat: no-repeat; /* Prevent tiling */
+}
+
+
+    @keyframes animateBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    /* Confetti stickers */
+    .confetti {
+        position: fixed;
+        top: -60px;
+        width: 150px;
+        height: 150px;
+        background-size: contain;
+        background-repeat: no-repeat;
+        pointer-events: none;
+        animation: fall linear infinite;
+    }
+
+    @keyframes fall {
+        0% { transform: translateY(-60px) rotate(0deg); opacity: 1; }
+        100% { transform: translateY(110vh) rotate(360deg); opacity: 0.8; }
+    }
+
+    .board {
+        display: grid;
+        grid-template-columns: repeat(3, 100px);
+        gap: 10px;
+        perspective: 1000px;
+    }
+    .card {
+        width: 100px;
+        height: 100px;
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform 0.5s;
+        cursor: pointer;
+        border-radius: 12px;
+    }
+    .card.flipped { transform: rotateY(180deg); }
+    .card-face {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        border-radius: 12px;
+        backface-visibility: hidden;
+        border: 3px solid #ff88d4;
+    }
+    .front { background: #ff5cb9; }
+    .back { background: white; color: black; transform: rotateY(180deg); }
+    .matched .back { background: limegreen; }
+    .bingo {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 4rem;
+        font-weight: bold;
+        color: gold;
+        text-shadow: 2px 2px 10px black;
+        opacity: 0;
+        animation: bingoPop 1.5s forwards;
+    }
+    @keyframes bingoPop {
+        0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+        50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+        100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+
+    .play-again {
+  position: fixed;
+  top: 8%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(90deg, #ff8800, #ff0066);
+  color: white;
+  font-size: 1.5rem;
+  font-family: "Caveat";
+  padding: 12px 25px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 0 20px 12px rgb(255 0 0 / 50%);
+  display: none;
+  z-index: 10000;
+  transition: transform 0.2s;
+      width:210px ;
+    height: 58px;
+}
+
+.play-again:hover {
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+@keyframes glowPulse {
+    from { text-shadow: 0 0 10px gold, 0 0 20px gold; }
+    to { text-shadow: 0 0 20px orange, 0 0 40px red; }
+}
+
+</style>
+</head>
+<body>
+<h2>Happy Birthday Di !!! 🤭</h2>
+<div class="board" id="board"></div>
+<button class="play-again" id="playAgainBtn" onclick="window.location.href='your-next-page.html'" href="your-next-page.html"> Claim Gift ! 🎀🎁
+</button>
+
+
+<script>
+// Create confetti stickers
+const stickers = [
+    "https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExamIzeDd3cW9xbHc0ZGZuOTdzZWgwZjdvbGN0ZDByZmR5c3phM2o1ZiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/120ErahsQyf1q8/giphy.gif",
+    "https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExamIzeDd3cW9xbHc0ZGZuOTdzZWgwZjdvbGN0ZDByZmR5c3phM2o1ZiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/120ErahsQyf1q8/giphy.gif",
+    "https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExamIzeDd3cW9xbHc0ZGZuOTdzZWgwZjdvbGN0ZDByZmR5c3phM2o1ZiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/120ErahsQyf1q8/giphy.gif"
+];
+
+for (let i = 0; i < 15; i++) {
+    let confetti = document.createElement("div");
+    confetti.className = "confetti";
+    confetti.style.backgroundImage = `url('${stickers[Math.floor(Math.random() * stickers.length)]}')`;
+    confetti.style.left = Math.random() * 100 + "vw";
+    confetti.style.animationDuration = 5 + Math.random() * 5 + "s";
+    confetti.style.animationDelay = Math.random() * 5 + "s";
+    document.body.appendChild(confetti);
+}
+
+// Game Logic
+const board = document.getElementById("board");
+let symbols = ['🍎','🍎','🍎','🍉','🍉','🍉','🍇','🍇','🍇'];
+symbols.sort(() => Math.random() - 0.5);
+
+let flippedCards = [];
+let lockBoard = false;
+let matchedCount = 0;
+
+symbols.forEach(symbol => {
+    const card = document.createElement("div");
+    card.classList.add("card");
+
+    const frontFace = document.createElement("div");
+    frontFace.classList.add("card-face", "front");
+    frontFace.innerHTML = '<img src="https://media.giphy.com/media/eVy5UemPAA4tC2Fuul/giphy.gif" style="width:100%; height:100%; border-radius:12px;">';
+
+    const backFace = document.createElement("div");
+    backFace.classList.add("card-face", "back");
+    backFace.innerHTML = symbol;
+
+    card.appendChild(frontFace);
+    card.appendChild(backFace);
+    board.appendChild(card);
+
+    card.addEventListener("click", () => {
+        if (lockBoard || card.classList.contains("flipped") || card.classList.contains("matched")) return;
+        card.classList.add("flipped");
+        flippedCards.push(card);
+
+        if (flippedCards.length === 3) {
+            lockBoard = true;
+            setTimeout(checkMatch, 800);
+        }
+    });
+});
+
+function checkMatch() {
+    const [c1, c2, c3] = flippedCards;
+    const match = c1.children[1].innerHTML === c2.children[1].innerHTML &&
+                  c2.children[1].innerHTML === c3.children[1].innerHTML;
+
+    if (match) {
+        flippedCards.forEach(c => c.classList.add("matched"));
+        matchedCount += 3;
+        if (matchedCount === 9) showBingo();
+    } else {
+        flippedCards.forEach(c => c.classList.remove("flipped"));
+    }
+
+    flippedCards = [];
+    lockBoard = false;
+}
+
+function showBingo() {
+    const bingo = document.createElement("div");
+    bingo.classList.add("bingo");
+    bingo.textContent = "BINGO!";
+    document.body.appendChild(bingo);
+
+    // Show play again button after 1 second
+    setTimeout(() => {
+        document.getElementById("playAgainBtn").style.display = "block";
+    }, 1000);
+
+    // Extra glow effect on bingo
+    bingo.style.animation = "bingoPop 1.5s forwards, glowPulse 1.5s infinite alternate";
+}
+
+
+
+
+</script>
+
+</body>
+</html>
